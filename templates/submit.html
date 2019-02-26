@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>The Log Log</title>
+</head>
+<body>
+<h1>The Log Log</h1>
+<form method="POST" action="/">
+    {{ form.csrf_token }}
+    {{form.blood.label}}
+    {{form.blood}}
+    {{ form.size.label }}
+    {{ form.size }}
+    {{form.pain.label}}
+    {{form.pain}}
+    {{ form.notes.label}}
+    {{ form.notes }}
+    <input type="submit" value="Go">
+</form>
+
+</body>
+</html>
