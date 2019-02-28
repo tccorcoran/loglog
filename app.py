@@ -82,11 +82,10 @@ def graph():
     daily_agg = pd.read_csv("loglog_agg.log")
     daily_agg['by_day'] = daily_agg['by_day'].apply(lambda x: datetime.strptime(x, "%b %d"))
     # output to static HTML file
-    output_file("templates/graph.html", title="Log Log Graph")
 
     # create a new plot with a a datetime axis type
     p = figure(plot_width=800, plot_height=350, x_axis_type="datetime")
-    p2 = figure(plot_width=800, plot_height=350,x_axis_type="datetime")
+    p2 = figure(plot_width=800, plot_height=350,x_axis_type="datetime",y_range=(0,daily_agg['count'].max()+1))
 
     p2.line( daily_agg['by_day'], daily_agg['count'])
 
@@ -98,7 +97,7 @@ def graph():
     # NEW: customize by setting attributes
     p.xaxis.formatter = DatetimeTickFormatter(days="%d-%b-%Y", hours="%H:%M", seconds="%S")
     p.title.text = "BM Log"
-    p2.title.text = "BM Count"
+    p2.title.text = "BM Counts"
     p.legend.location = "top_left"
     p2.xaxis.formatter = DatetimeTickFormatter(days="%d-%b")
 
