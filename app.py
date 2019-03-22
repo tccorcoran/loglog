@@ -45,12 +45,7 @@ def submit():
         with open('loglog.log', 'a') as fi:
             fi.write(
                 f"{cur_time_str},{form.data['blood']},{form.data['size']},{form.data['pain']},{form.data['notes']}\n")
-        csv = dataframeize("loglog.log")
-        csv['by_day'] = csv['date'].apply(lambda x: x.strftime("%b %d"))
-        grouped = csv.groupby("by_day")
-        df = grouped.agg({"date": len, "blood": np.mean, "pain": np.mean, "size": np.mean}).rename(
-            columns={'date': 'count'})
-        df.to_csv("loglog_agg.log")
+        aggregate('loglog.log', 'loglog_agg.log')
         return redirect('/chart')
     return render_template('submit.html', form=form)
 
@@ -80,18 +75,24 @@ def chart():
 def dataframeize(log_path):
     csv = pd.read_csv("loglog.log")
     csv['date'] = csv['date'].apply(lambda x: datetime.strptime(x, "%d %b %y %H:%M"))
-    csv['blood'] = csv['blood'].apply(lambda x: {"none": 0, "light": 1, "med": 2, "medium": 2, "heavy": 3}[x])
-    csv['size'] = csv['size'].apply(lambda x: {"small": 1, "med": 2, "medium": 2, "large": 3}[x])
+    csv['blood'] = csv['blood'].apply(lambda x: {np.nan:0, "none": 0, "light": 1, "med": 2, "medium": 2, "heavy": 3}[x])
+    csv['size'] = csv['size'].apply(lambda x: {"small": 1, np.nan:0, "med": 2, "medium": 2, "large": 3}[x])
     csv.sort_values(by=['date'], inplace=True, ascending=True)
     return csv
 
+def aggregate(log_path, log_agg_path):
+    csv = dataframeize(log_path)
+    csv['by_day'] = csv['date'].apply(lambda x: x.strftime("%b %d"))
+    grouped = csv.groupby("by_day")
+    df = grouped.agg({"date": len, "blood": np.mean, "pain": np.mean, "size": np.mean}).rename(
+        columns={'date': 'count'})
+    df.to_csv(log_agg_path)
 
 @app.route('/graph', methods=('GET', 'POST'))
 def graph():
     csv = dataframeize("loglog.log")
     daily_agg = pd.read_csv("loglog_agg.log")
     daily_agg['by_day'] = daily_agg['by_day'].apply(lambda x: datetime.strptime(x + ' 19', "%b %d %y"))
-
     # create a new plot with a a datetime axis type
     p = figure(plot_width=800, plot_height=350, x_axis_type="datetime")
     p2 = figure(plot_width=800, plot_height=350, x_axis_type="datetime", y_range=(0, daily_agg['count'].max() + 1))
@@ -101,7 +102,7 @@ def graph():
 
     # add renderers
     p.line(csv['date'], csv['pain'], color='orange', legend='pain')
-    p.line(csv['date'], csv['size'] * 3.33, color='green', legend='size')
+    #p.line(csv['date'], csv['size'] * 3.33, color='green', legend='size')
     p.line(csv['date'], csv['blood'] * 3.33, color='red', legend='blood')
 
     # NEW: customize by setting attributes
@@ -112,7 +113,6 @@ def graph():
     p2.xaxis.formatter = DatetimeTickFormatter(days="%d-%b")
 
     save(column(p, p2), "templates/graph.html")
-
     return render_template('graph.html')
 
 
